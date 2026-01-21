@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système d'Inspection Générale - LSPD / BCSO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --lspd-primary: #0f3460;
+            --lspd-secondary: #1a1a2e;
+            --lspd-accent: #e94560;
+            --bcso-primary: #3d5a2b; /* Vert Sheriff */
+            --bcso-secondary: #25331a;
+            --bcso-accent: #d4a373; /* Beige Sheriff */
+            --text-color: #e0e0e0;
+            --bg-dark: #121212;
+            --panel-bg: #1e1e24;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+        }
+
+        /* Thème par défaut (LSPD) */
+        body.lspd-theme {
+            --primary: var(--lspd-primary);
+            --secondary: var(--lspd-secondary);
+            --accent: var(--lspd-accent);
+        }
+
+        /* Thème BCSO */
+        body.bcso-theme {
+            --primary: var(--bcso-primary);
+            --secondary: var(--bcso-secondary);
+            --accent: var(--bcso-accent);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background-color: var(--secondary);
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid var(--primary);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .brand {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .brand h1 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        .brand h2 { font-size: 0.8rem; color: #888; margin-top: 5px; }
+
+        .nav-links { list-style: none; padding: 20px 0; flex-grow: 1; }
+        .nav-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255,255,255,0.05);
+            border-left-color: var(--accent);
+        }
+        .nav-item i { margin-right: 15px; width: 25px; text-align: center; }
+
+        .theme-switcher {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-theme {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.7;
+        }
+        .btn-theme:hover, .btn-theme.active { opacity: 1; transform: scale(1.05); }
+        .btn-lspd { background-color: #0f3460; color: white; }
+        .btn-bcso { background-color: #3d5a2b; color: white; }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+        .status-badge {
+            background-color: var(--accent);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* SECTIONS / TABS */
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* FORMS & INPUTS */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #aaa; }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--panel-bg);
+            border: 1px solid #333;
+            border-radius: 5px;
+            color: white;
+            transition: 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 8px rgba(233, 69, 96, 0.2);
+        }
+
+        /* GRID LAYOUTS */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .card {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border-top: 3px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .card h3 { margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        /* CHECKBOX CUSTOM */
+        .checklist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .checklist-item:last-child { border-bottom: none; }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        input:disabled + .slider { background-color: #555; cursor: not-allowed; }
+
+        /* BUTTONS */
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { filter: brightness(1.2); }
+        .btn-accent { background-color: var(--accent); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+        
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid #333; }
+        th { background-color: rgba(255,255,255,0.05); color: var(--accent); }
+        tr:hover { background-color: rgba(255,255,255,0.02); }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--panel-bg);
+            padding: 30px;
+            border-radius: 10px;
+            width: 50%;
+            max-width: 600px;
+            position: relative;
+            border: 1px solid var(--accent);
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        /* SCORE DISPLAY */
+        .score-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body class="lspd-theme">
+
+    <nav class="sidebar">
+        <div class="brand">
+            <i class="fas fa-shield-alt fa-3x" style="margin-bottom: 10px; color: var(--accent);"></i>
+            <h1 id="dept-name">L.S.P.D</h1>
+            <h2>Inspection Générale</h2>
+        </div>
+        
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchTab('dashboard')">
+                <i class="fas fa-chart-line"></i> Tableau de bord
+            </li>
+            <li class="nav-item" onclick="switchTab('inspection-agent')">
+                <i class="fas fa-user-shield"></i> Inspecter Agent
+            </li>
+            <li class="nav-item" onclick="switchTab('inspection-vehicle')">
+                <i class="fas fa-car-side"></i> Inspecter Véhicule
+            </li>
+            <li class="nav-item" onclick="switchTab('reports')">
+                <i class="fas fa-file-contract"></i> Rapports & Logs
+            </li>
+        </ul>
+
+        <div class="theme-switcher">
+            <button class="btn-theme btn-lspd active" onclick="setTheme('lspd')">LSPD</button>
+            <button class="btn-theme btn-bcso" onclick="setTheme('bcso')">BCSO</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        
+        <header class="header-top">
+            <div>
+                <h2 id="page-title">Tableau de bord</h2>
+                <p style="color: #888;">Bienvenue, Inspecteur. Session active.</p>
+            </div>
+            <div class="status-badge">
+                <i class="fas fa-satellite-dish"></i> CONNECTÉ AU CAD
+            </div>
+        </header>
+
+        <div id="dashboard" class="tab-content active">
+            <div class="grid-3">
+                <div class="card">
+                    <h3><i class="fas fa-users"></i> Agents Inspectés</h3>
+                    <p class="score-display" id="total-agents">0</p>
+                    <p style="text-align: center; font-size: 0.9rem; color: #aaa;">Cette session</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-check-circle"></i> Taux de Conformité</h3>
+                    <p class="score-display" style="color: var(--success);" id="compliance-rate">100%</p>
+                    <p style="text-align: center; font-size: 0.9rem; color: #aaa;">Moyenne globale</p>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Avertissements</h3>
+                    <p class="score-display" style="color: var(--warning);" id="total-warnings">0</p>
+                    <p style="text-align: center; font-size: 0.9rem; color: #aaa;">Infractions mineures</p>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 30px;">
+                <h3><i class="fas fa-bullhorn"></i> Notes de Service - Inspection Générale</h3>
+                <ul style="padding-left: 20px; line-height: 1.8;">
+                    <li>Rappel : La vérification du numéro de série des armes de service est obligatoire.</li>
+                    <li>BCSO : Vérification des kits de premiers secours dans les véhicules "Ranger".</li>
+                    <li>LSPD : Tolérance zéro sur les tenues non conformes lors des briefings.</li>
+                    <li>Tout rapport falsifié entraînera une mise à pied immédiate.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="inspection-agent" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h3>Identité de l'Agent</h3>
+                    <div class="form-group">
+                        <label>Nom & Prénom</label>
+                        <input type="text" id="agent-name" placeholder="Ex: John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Matricule</label>
+                        <input type="number" id="agent-badge" placeholder="Ex: 05">
+                    </div>
+                    <div class="form-group">
+                        <label>Grade</label>
+                        <select id="agent-rank">
+                            <option value="Cadet">Cadet / Deputy I</option>
+                            <option value="Officier I">Officier I / Deputy II</option>
+                            <option value="Officier II">Officier II / Deputy III</option>
+                            <option value="Officier III">Officier III / Senior Deputy</option>
+                            <option value="Sergent">Sergent</option>
+                            <option value="Lieutenant">Lieutenant</option>
+                            <option value="Capitaine">Capitaine</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Unité</label>
+                        <select id="agent-unit">
+                            <option value="Patrouille">Patrouille Standard</option>
+                            <option value="K9">Unité Canine (K9)</option>
+                            <option value="VIR">Intervention Rapide</option>
+                            <option value="Air">Unité Aérienne</option>
+                            <option value="Enquête">Enquêteur</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Conformité Tenue & Équipement</h3>
+                    <div id="checklist-container">
+                        <div class="checklist-item">
+                            <span>Tenue réglementaire (propre/complète)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="10">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Gilet pare-balles visible & intact</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="10">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Badge visible et correct</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="5">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Radio (Fréquence correcte + Oreillette)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="5">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div style="margin: 15px 0 5px 0; color: var(--accent); font-weight: bold; border-bottom: 1px solid #333;">ARMEMENT</div>
+                        
+                        <div class="checklist-item">
+                            <span>Arme de poing (Service)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="15">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Taser (Cartouches pleines)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="10">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Matraque / Lampe torche</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="5">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Menottes (2 paires min.)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="5">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div style="margin: 15px 0 5px 0; color: var(--accent); font-weight: bold; border-bottom: 1px solid #333;">THÉORIE</div>
+
+                        <div class="checklist-item">
+                            <span>Codes Radio & 10-Codes</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="15">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Droits Miranda</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="10">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Code Pénal (Bases)</span>
+                            <label class="switch">
+                                <input type="checkbox" checked class="check-item" data-points="10">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3>Commentaires & Sanctions</h3>
+                <div class="form-group">
+                    <textarea id="agent-comments" rows="3" placeholder="Notez ici les objets illégaux trouvés, les manques spécifiques ou les remarques positives..."></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button class="btn btn-primary" onclick="resetForm()">Réinitialiser</button>
+                    <button class="btn btn-success" onclick="saveInspection()">Valider l'Inspection</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="inspection-vehicle" class="tab-content">
+            <div class="card">
+                <h3><i class="fas fa-car-crash"></i> État du Véhicule de Patrouille</h3>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Immatriculation / ID Véhicule</label>
+                        <input type="text" id="veh-plate" placeholder="LSPD-01">
+                    </div>
+                    <div class="form-group">
+                        <label>Modèle</label>
+                        <input type="text" id="veh-model" placeholder="Vapid Scout">
+                    </div>
+                </div>
+
+                <div class="grid-3">
+                    <div>
+                        <h4>Extérieur</h4>
+                        <div class="checklist-item">
+                            <span>Carrosserie (Pas de dégâts majeurs)</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Pneus (État correct)</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Gyros & Sirènes fonctionnels</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Coffre</h4>
+                        <div class="checklist-item">
+                            <span>Herse (Spikes) x2</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Kit Premiers Secours</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Extincteur</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Mécanique</h4>
+                        <div class="checklist-item">
+                            <span>Niveau Essence (>50%)</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Moteur (Pas de voyant)</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="checklist-item">
+                            <span>Propreté Intérieure</span>
+                            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-accent" onclick="alert('Module véhicule sauvegardé (Simulation)')">Enregistrer Véhicule</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="reports" class="tab-content">
+            <div class="card">
+                <h3><i class="fas fa-history"></i> Historique des Inspections</h3>
+                <p>Les rapports ci-dessous sont stockés localement.</p>
+                <div style="overflow-x: auto;">
+                    <table id="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Heure</th>
+                                <th>Agent</th>
+                                <th>Note</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="exportDiscord()">
+                        <i class="fab fa-discord"></i> Copier Rapport Discord
+                    </button>
+                    <button class="btn btn-danger" onclick="clearLogs()" style="background-color: var(--danger);">
+                        <i class="fas fa-trash"></i> Vider l'historique
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-success" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 style="color: var(--success); text-align: center;"><i class="fas fa-check-circle"></i> Inspection Enregistrée</h2>
+            <p style="text-align: center; margin-top: 15px;">Les données ont été ajoutées au registre.</p>
+            <div id="modal-details" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 5px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- ETAT GLOBAL ---
+        let inspections = JSON.parse(localStorage.getItem('ig_inspections')) || [];
+        updateDashboard();
+        renderTable();
+
+        // --- NAVIGATION ---
+        function switchTab(tabId) {
+            // Cacher tous les contenus
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+            // Afficher le bon
+            document.getElementById(tabId).classList.add('active');
+            
+            // Highlight menu item
+            const index = ['dashboard', 'inspection-agent', 'inspection-vehicle', 'reports'].indexOf(tabId);
+            if(index !== -1) document.querySelectorAll('.nav-item')[index].classList.add('active');
+
+            // Mise à jour titre
+            const titles = {
+                'dashboard': 'Tableau de bord',
+                'inspection-agent': 'Inspection Individuelle',
+                'inspection-vehicle': 'Inspection Flotte',
+                'reports': 'Registres & Logs'
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+        }
+
+        // --- THEME SWITCHER ---
+        function setTheme(theme) {
+            document.body.className = theme + '-theme';
+            
+            document.querySelectorAll('.btn-theme').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.btn-${theme}`).classList.add('active');
+
+            const deptName = document.getElementById('dept-name');
+            if (theme === 'bcso') {
+                deptName.innerText = "B.C.S.O";
+            } else {
+                deptName.innerText = "L.S.P.D";
+            }
+        }
+
+        // --- LOGIQUE INSPECTION ---
+        function saveInspection() {
+            // Récupération des données
+            const name = document.getElementById('agent-name').value;
+            const badge = document.getElementById('agent-badge').value;
+            const rank = document.getElementById('agent-rank').value;
+            const comments = document.getElementById('agent-comments').value;
+
+            if (!name || !badge) {
+                alert("Veuillez remplir le nom et le matricule.");
+                return;
+            }
+
+            // Calcul du score
+            let score = 0;
+            let maxScore = 0;
+            const checks = document.querySelectorAll('#inspection-agent .check-item');
+            
+            checks.forEach(chk => {
+                const points = parseInt(chk.getAttribute('data-points'));
+                maxScore += points;
+                if (chk.checked) {
+                    score += points;
+                }
+            });
+
+            // Calcul pourcentage
+            const percentage = Math.round((score / maxScore) * 100);
+            let status = "Conforme";
+            if (percentage < 50) status = "Critique";
+            else if (percentage < 80) status = "Avertissement";
+
+            // Création objet
+            const inspection = {
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                agent: name,
+                badge: badge,
+                rank: rank,
+                score: percentage,
+                status: status,
+                comments: comments
+            };
+
+            // Sauvegarde
+            inspections.unshift(inspection); // Ajoute au début
+            localStorage.setItem('ig_inspections', JSON.stringify(inspections));
+
+            // Feedback UI
+            showModal(inspection);
+            resetForm();
+            updateDashboard();
+            renderTable();
+        }
+
+        function resetForm() {
+            document.getElementById('agent-name').value = "";
+            document.getElementById('agent-badge').value = "";
+            document.getElementById('agent-comments').value = "";
+            // Reset checkbox
+            document.querySelectorAll('.check-item').forEach(c => c.checked = true);
+        }
+
+        function showModal(data) {
+            const modal = document.getElementById('modal-success');
+            const details = document.getElementById('modal-details');
+            
+            details.innerHTML = `
+                <strong>Agent:</strong> ${data.rank} ${data.agent} (${data.badge})<br>
+                <strong>Score:</strong> ${data.score}/100<br>
+                <strong>Résultat:</strong> <span style="color:${getColor(data.score)}">${data.status}</span>
+            `;
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-success').style.display = 'none';
+        }
+
+        function getColor(score) {
+            if(score >= 80) return '#4caf50';
+            if(score >= 50) return '#ff9800';
+            return '#f44336';
+        }
+
+        // --- DASHBOARD & LOGS ---
+        function updateDashboard() {
+            document.getElementById('total-agents').innerText = inspections.length;
+            
+            if (inspections.length > 0) {
+                const avg = inspections.reduce((acc, cur) => acc + cur.score, 0) / inspections.length;
+                document.getElementById('compliance-rate').innerText = Math.round(avg) + "%";
+                
+                const warnings = inspections.filter(i => i.score < 80).length;
+                document.getElementById('total-warnings').innerText = warnings;
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#logs-table tbody');
+            tbody.innerHTML = "";
+
+            inspections.forEach((insp, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${insp.date.split(' ')[1]}</td>
+                    <td>${insp.rank} ${insp.agent}</td>
+                    <td style="color: ${getColor(insp.score)}; font-weight:bold;">${insp.score}%</td>
+                    <td>${insp.status}</td>
+                    <td>
+                        <button class="btn-theme" style="background:#f44336; color:white;" onclick="deleteLog(${index})"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteLog(index) {
+            if(confirm("Supprimer cette entrée ?")) {
+                inspections.splice(index, 1);
+                localStorage.setItem('ig_inspections', JSON.stringify(inspections));
+                renderTable();
+                updateDashboard();
+            }
+        }
+
+        function clearLogs() {
+            if(confirm("Êtes-vous sûr de vouloir tout effacer ?")) {
+                inspections = [];
+                localStorage.removeItem('ig_inspections');
+                renderTable();
+                updateDashboard();
+            }
+        }
+
+        // --- EXPORT DISCORD ---
+        function exportDiscord() {
+            if (inspections.length === 0) {
+                alert("Aucune donnée à exporter.");
+                return;
+            }
+
+            let report = "**RAPPORT D'INSPECTION GÉNÉRALE**\n";
+            report += `Date: ${new Date().toLocaleDateString()}\n`;
+            report += "----------------------------------\n\n";
+
+            inspections.forEach(i => {
+                report += `👤 **${i.rank} ${i.agent}** (Mat: ${i.badge})\n`;
+                report += `📊 Note: ${i.score}/100 | Statut: ${i.status}\n`;
+                if(i.comments) report += `📝 Remarques: ${i.comments}\n`;
+                report += `\n`;
+            });
+
+            report += "----------------------------------\n";
+            report += "Fin de transmission.";
+
+            navigator.clipboard.writeText(report).then(() => {
+                alert("Rapport copié dans le presse-papier ! (Format Discord Markdown)");
+            });
+        }
+
+        // Fermer modal au clic extérieur
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-success');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
