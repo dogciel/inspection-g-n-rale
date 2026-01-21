@@ -1,1 +1,0 @@
-# inspection-g-n-rale
